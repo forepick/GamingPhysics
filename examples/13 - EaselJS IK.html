@@ -1,0 +1,152 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<meta charset=utf-8>
+	<link href="demoStyles.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="../lib/easeljs-0.7.0.min.js"></script>
+
+	<title>EaselJS - IK (Inverse Kinematics)</title>
+	<script>
+
+	var canvas, stage;
+	var update = true;
+
+	var graphics;
+	var link1;
+	var link2;
+	var link3;
+	var bg;
+
+	function init() {
+		if (window.top != window) {
+			document.getElementById("header").style.display = "none";
+		}
+
+		canvas = document.getElementById("testCanvas");
+
+		stage = new createjs.Stage(canvas);
+
+		createjs.Touch.enable(stage);
+
+		stage.enableMouseOver(10);
+		stage.mouseMoveOutside = true; // keep tracking the mouse even when it leaves 
+
+		bg = new createjs.Shape(new createjs.Graphics().beginFill("#FFF").drawRect(0, 0, canvas.width, canvas.height).endFill());
+		bg.alpha = 0.2;
+		stage.addChild(bg);
+
+ 		graphics = new createjs.Graphics();
+		graphics.beginFill("#800");
+		graphics.dc(0, 0, 20).ef();
+ 		
+ 		link1 = new createjs.Shape(graphics);
+ 		link2 = new createjs.Shape(graphics);
+ 		link3 = new createjs.Shape(graphics);
+
+ 		link1.passed = false;
+ 		link2.passed = false;
+ 		link3.passed = false;
+
+ 		link1.siblings = [];
+ 		link2.siblings = [];
+ 		link3.siblings = [];
+ 		
+ 		link1.x = 150;
+ 		link1.y = 100;
+
+ 		link2.x = 50;
+ 		link2.y = 250;
+
+ 		link3.x = 250;
+ 		link3.y = 250;
+
+ 		connect(link1, link2);
+ 		connect(link1, link3);
+
+ 		link1.on("pressmove", move);
+ 		link2.on("pressmove", move);
+ 		link3.on("pressmove", move);
+		
+
+ 		stage.addChild(link1);
+ 		stage.addChild(link2);
+ 		stage.addChild(link3);
+
+		createjs.Ticker.setInterval(20);
+		createjs.Ticker.on("tick", tick);
+		
+	}
+	function move(evt){
+		this.passed = true;
+		this.x = evt.stageX;
+		this.y = evt.stageY;
+		calcIK(this);
+		resetLink(this);
+		update = true;
+	}
+
+	function connect(p1, p2){
+		dist = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+		p1.siblings.push({target: p2, dist: dist});
+		p2.siblings.push({target: p1, dist: dist});
+	}
+	function resetLink(root){
+		root.passed = false;
+		var target;
+		for(var i in root.siblings){
+			target = root.siblings[i].target;
+			if(!target.passed)
+				continue;
+			resetLink(target);
+		}
+	}
+
+	function calcIK(root){
+		var sib;
+		var target;
+		var dist;
+		var sin;
+		var cos;
+	
+		var dx;
+		var dy;
+		for(var i in root.siblings){
+			sib = root.siblings[i];
+			target = sib.target;
+			if(target.passed)
+				continue;
+			dx = target.x - root.x;
+			dy = target.y - root.y;
+			dist = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+			sin = dy / dist;
+			cos = dx / dist;
+
+			target.x = root.x + sib.dist * cos;
+			target.y = root.y + sib.dist * sin;
+			target.passed = true;
+
+			calcIK(target);
+		}
+	}
+
+	function tick() {
+		
+		
+		if (update) {
+			update = false; // only update once
+			stage.update();
+		}
+	}
+	</script>
+ 
+
+ 
+</head>
+<body onload="init();">
+	<div id="header">
+		<h1>EaselJS - IK (Inverse Kinematics)</h1>
+	</div>
+	<canvas id="testCanvas" width="960" height="400"></canvas>
+</body>
+</html>

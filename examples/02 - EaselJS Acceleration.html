@@ -1,0 +1,92 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<meta charset=utf-8>
+	<link href="demoStyles.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="../lib/easeljs-0.7.0.min.js"></script>
+
+	<title>EaselJS - Acceleration &amp; Energy Absorption</title>
+	<script>
+
+	var canvas, stage;
+	var update = true;
+	var hero;
+	var elasticity = 0.8;
+
+	function init() {
+		if (window.top != window) {
+			document.getElementById("header").style.display = "none";
+		}
+
+		canvas = document.getElementById("testCanvas");
+		//canvas.width = window.innerWidth - 30;
+		//canvas.height = window.innerHeight - 120;
+
+		stage = new createjs.Stage(canvas);
+
+		
+		// create hero
+		{
+	 		var heroGraphics = new createjs.Graphics();
+	 		heroGraphics.beginFill("#800").drawCircle(0, 0, 20).endFill();
+
+	 		hero = new createjs.Shape(heroGraphics);
+	 		hero.x = canvas.width / 2;
+	 		hero.y = 50;
+	 		hero.v = 0;
+	 		hero.a = 1;
+	 	}
+ 		
+
+ 		stage.addChild(hero);
+		createjs.Ticker.setInterval(20);
+		createjs.Ticker.on("tick", tick);
+	}
+
+	function animate(){
+		hero.v += hero.a;		// applying acceleration
+		hero.y += hero.v;		// applying velocity
+
+		// Vertical Limitation
+		if(hero.y >= canvas.height - 20){
+			hero.v *= -elasticity;
+			{
+				// compensation
+				hero.y += hero.v; 
+			}
+			
+		}
+		if(hero.y <= 20){
+			hero.v *= -elasticity;
+
+			{
+				// compensation
+				hero.y += hero.v; 
+			}
+		}
+
+
+		update = true;
+	}
+
+	function tick() {
+		animate();
+		
+		if (update) {
+			update = false; // only update once
+			stage.update();
+		}
+	}
+	</script>
+ 
+
+ 
+</head>
+<body onload="init();">
+	<div id="header">
+		<h1>EaselJS - Acceleration &amp; Energy Absorption (1D)</h1>
+	</div>
+	<canvas id="testCanvas" width="960" height="400"></canvas>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<meta charset=utf-8>
+	<link href="demoStyles.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="../lib/easeljs-0.7.0.min.js"></script>
+
+	<title>EaselJS - IK Elastic Chain</title>
+	<script id="sc1">
+
+	var canvas, stage;
+	var update = true;
+
+	var selected;
+	var graphics;
+	var bg;
+
+	var k = 0.7;
+	var dump = 0.4;
+
+	function init() {
+		if (window.top != window) {
+			document.getElementById("header").style.display = "none";
+		}
+
+		canvas = document.getElementById("testCanvas");
+
+		stage = new createjs.Stage(canvas);
+
+		createjs.Touch.enable(stage);
+
+		stage.enableMouseOver(10);
+		stage.mouseMoveOutside = true; // keep tracking the mouse even when it leaves 
+
+		bg = new createjs.Shape(new createjs.Graphics().beginFill("#FFF").drawRect(0, 0, canvas.width, canvas.height).endFill());
+		bg.alpha = 0.2;
+		stage.addChild(bg);
+
+		graphics = new createjs.Graphics();
+		graphics.beginFill("#800");
+		graphics.arc(0, 0, 20, 0, Math.PI*2, true).arc(0, 0, 15, 0, Math.PI*2, false).ef();
+		graphics.beginFill("rgba(255, 0, 255, 0.01)").arc(0, 0, 15, 0, Math.PI*2, false).ef();
+   
+ 		
+ 		var link;
+ 		var count = 20;
+ 		var gap = 27;
+		var lastLink;
+ 		for(var i = 0; i < count; i++){
+			link = new createjs.Shape(graphics);
+			link.passed = false;
+			link.siblings = [];
+			link.x = 50 + i * gap;
+			link.y = 100;
+			link.vx = 0;
+			link.vy = 0;
+			link.ax = 0;
+			link.ax = 0;
+
+			link.shadow = new createjs.Shadow("rgba(128, 0, 0, 0.1)", 6, 6, 1);
+
+			link.on("pressmove", move);
+			if(lastLink)
+				connect(link, lastLink);
+			lastLink = link;
+
+			stage.addChild(link);
+ 		}
+
+
+ 		//stage.autoClear = false;
+		createjs.Ticker.setInterval(20);
+		createjs.Ticker.on("tick", tick);
+
+	}
+	function move(evt){
+		this.passed = true;
+		this.x = evt.stageX;
+		this.y = evt.stageY;
+		
+		selected = this;
+		
+		update = true;
+	}
+
+	function connect(p1, p2){
+		dist = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+		p1.siblings.push({target: p2, dist: dist});
+		p2.siblings.push({target: p1, dist: dist});
+	}
+	function resetLink(root){
+		root.passed = false;
+		var target;
+		for(var i in root.siblings){
+			target = root.siblings[i].target;
+			if(!target.passed)
+				continue;
+			resetLink(target);
+		}
+	}
+
+	function calcIK(root){
+		var sib;
+		var target;
+		var dist;
+		var sin;
+		var cos;
+		var currentDist;
+		var dx;
+		var dy;
+		for(var i in root.siblings){
+			sib = root.siblings[i];
+			target = sib.target;
+			if(target.passed)
+				continue;
+			dx = target.x - root.x;
+			dy = target.y - root.y;
+			dist = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+			sin = dy / dist;
+			cos = dx / dist;
+
+			target.ax = cos * (sib.dist - dist) * k;
+			target.ay = sin * (sib.dist - dist) * k;
+
+			target.vx += target.ax
+			target.vy += target.ay
+
+			target.vx *= dump;
+			target.vy *= dump;
+
+			target.x += target.vx;
+			target.y += target.vy;
+
+			target.passed = true;
+
+			// Rubber Effect
+			if(false){
+				dx = target.x - root.x;
+				dy = target.y - root.y;
+				dist = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+				target.rotation = 180 * Math.atan2(dy, dx) / Math.PI;
+				target.scaleX = dist / sib.dist;
+				target.scaleY = 1 / target.scaleX;
+			}
+
+			calcIK(target);
+		}
+	}
+
+	function animate(){
+		calcIK(selected);
+		resetLink(selected);
+		update = true;
+	}
+
+	function tick() {
+		if(selected){
+			animate();
+		}
+
+		if (update) {
+			update = false; // only update once
+			stage.update();
+		}
+	}
+	</script>
+ 
+
+ 
+</head>
+<body onload="init();">
+	<div id="header">
+		<h1>EaselJS - IK Elastic Chain</h1>
+	</div>
+	<canvas id="testCanvas" width="960" height="400"></canvas>
+</body>
+</html>

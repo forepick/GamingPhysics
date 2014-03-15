@@ -1,0 +1,141 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<meta charset=utf-8>
+	<link href="demoStyles.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="../lib/easeljs-0.7.0.min.js"></script>
+
+	<title>EaselJS - Oriented Elastic Movement</title>
+	<script>
+
+	var canvas, stage;
+	var update = true;
+
+	var hero;
+	var bg;
+
+	var target = {x: 0, y: 0};
+	
+	var k = 0.1;
+	var dump = 0.95;
+
+	function init() {
+		if (window.top != window) {
+			document.getElementById("header").style.display = "none";
+		}
+
+		
+		canvas = document.getElementById("testCanvas");
+
+		stage = new createjs.Stage(canvas);
+
+		createjs.Touch.enable(stage);
+		
+		stage.enableMouseOver(10);
+		stage.mouseMoveOutside = true; // keep tracking the mouse even when it leaves 
+
+		// draw scene
+		{
+	 		var bgGraphics = new createjs.Graphics();
+			bgGraphics.beginFill("#FFF").drawRect(0, 0, canvas.width, canvas.height).endFill();
+			bg = new createjs.Shape(bgGraphics);
+			bg.alpha = 0.2;
+			stage.addChild(bg);
+
+
+	 		var heroGraphics = new createjs.Graphics();
+	 		heroGraphics.beginFill("#800").mt(-20, -10).lt(20, 0).lt(-20, 10).lt(-15, 0).lt(-20, -10).endFill();
+
+	 		hero = new createjs.Shape(heroGraphics);
+	 		hero.name = "hero";
+	 		hero.vx = 0;
+	 		hero.vy = 0;
+	 		hero.ax = 0;
+	 		hero.ay = 0;
+
+	 		target.x = hero.x = 200;
+	 		target.y = hero.y = 10;
+	 		hero.offset = {x: 0, y: 0};
+ 		}
+ 		
+ 		hero.on("mousedown", down);
+		hero.on("pressmove", this.move);
+
+		bg.on("mousedown", down);
+		bg.on("pressmove", this.move);
+
+		//stage.autoClear = false;
+ 		stage.addChild(hero);
+		createjs.Ticker.setInterval(20);
+		createjs.Ticker.on("tick", tick);
+	}
+	function down(evt){
+
+		if(this == hero){
+			hero.offset = {x:hero.x-evt.stageX, y:hero.y-evt.stageY};
+		}
+		else{
+			hero.offset = {x: 0, y: 0};
+		}
+		target.x = evt.stageX + hero.offset.x;
+		target.y = evt.stageY + hero.offset.y;
+
+		update = true;
+	}
+	function move(evt){
+		
+		target.x = evt.stageX + hero.offset.x;
+		target.y = evt.stageY + hero.offset.y;
+
+		update = true;
+	}
+
+	function updateDirection(){
+		
+		//hero.rotation = 180 * Math.atan2(hero.vy, hero.vx) / Math.PI;
+		hero.rotation = 180 * Math.atan2(hero.ay, hero.ax) / Math.PI;
+	}
+
+	function animate(){
+		
+		var dx = hero.x - target.x;
+		var dy = hero.y - target.y;
+
+		hero.ax = -dx * k;
+		hero.ay = -dy * k;
+
+		hero.vx += hero.ax;
+		hero.vy += hero.ay;
+
+		hero.vx *= dump;
+		hero.vy *= dump;
+
+		hero.x += hero.vx;
+		hero.y += hero.vy;
+
+		updateDirection();
+
+		update = true;
+	}
+
+	function tick() {
+		animate();
+
+		if (update) {
+			update = false; // only update once
+			stage.update();
+		}
+	}
+	</script>
+ 
+
+ 
+</head>
+<body onload="init();">
+	<div id="header">
+		<h1>EaselJS - Oriented Elastic Movement</h1>
+	</div>
+	<canvas id="testCanvas" width="960" height="400"></canvas>
+</body>
+</html>

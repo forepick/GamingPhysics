@@ -1,0 +1,115 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<meta charset=utf-8>
+	<link href="demoStyles.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="../lib/easeljs-0.7.0.min.js"></script>
+
+	<title>EaselJS - Optimization</title>
+	<script>
+
+	var canvas, stage;
+
+	var update = true;
+
+	var particleGraphics;
+	var particles = [];
+	var elasticity = 0.8;
+	var particleFlow = 3;
+
+	var bg;
+
+	function init() {
+		if (window.top != window) {
+			document.getElementById("header").style.display = "none";
+		}
+
+		canvas = document.getElementById("testCanvas");
+
+		stage = new createjs.Stage(canvas);
+
+		createjs.Touch.enable(stage);
+
+		stage.enableMouseOver(10);
+		stage.mouseMoveOutside = true; // keep tracking the mouse even when it leaves 
+
+		bg = new createjs.Shape(new createjs.Graphics().beginFill("#FFF").drawRect(0, 0, canvas.width, canvas.height).endFill());
+		bg.alpha = 0.2;
+		stage.addChild(bg);
+
+		bg.on("pressmove", function(evt){
+			createParticle(evt.stageX, evt.stageY);
+		});
+
+ 		particleGraphics = new createjs.Graphics();
+ 		for(var i = 30; i > 0; i-=1){
+ 			particleGraphics.beginFill(i % 2 ? "#FFF" : "#800");
+ 			particleGraphics.dc(0, 0, i).ef();
+ 		}
+ 		
+ 		//stage.autoClear = false;
+		createjs.Ticker.setInterval(20);
+		createjs.Ticker.on("tick", tick);
+		
+	}
+	function createParticle(px, py){
+		for(var i = 0; i < particleFlow; i++){
+			var particle = new createjs.Shape(particleGraphics);
+			//particle.scaleX = particle.scaleY = Math.random() + 2;
+			particle.x = px;
+	 		particle.y = py;
+	 		particle.vx = 2 * (Math.random() - 0.5) * 8;
+	 		particle.vy = -Math.random() * 6;
+	 		particle.ax = 0;
+	 		particle.ay = 1;
+	 		
+	 		var shadow = new createjs.Shadow("#000", 1, 1, 4);
+            particle.shadow = shadow;
+            particle.cache(-33, -33, 66, 66)
+	 		particle.elasticity = 0.99;
+	 		stage.addChild(particle);
+	 		particles.push(particle);
+	 	}
+	}
+	function animate(){
+		var p;
+		for (var i in particles){
+			p = particles[i];
+			p.vy += p.ay;		// applying acceleration
+			p.vx += p.ax;		// applying acceleration
+			p.y += p.vy;		// applying velocity
+			p.x += p.vx;		// applying velocity
+
+			if(p.y >= canvas.height){
+				p.vy *= -elasticity;
+			}
+			if(p.x > canvas.width || p.x < 0 || p.y > canvas.height + 10){
+				particles.splice(particles.indexOf(p), 1);
+				stage.removeChild(p);
+			}
+		}
+
+		update = true;
+	}
+
+	function tick() {
+		animate();
+		
+		if (update) {
+			update = false; // only update once
+			stage.update();
+		}
+	}
+	</script>
+ 
+
+ 
+</head>
+<body onload="init();">
+	<div id="header">
+		<h1>EaselJS - Optimization</h1>
+	</div>
+	<canvas id="testCanvas" width="960" height="400"></canvas>
+</body>
+</html>

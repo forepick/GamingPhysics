@@ -1,0 +1,381 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" style="background-color: #000000;">
+<head>
+	<meta charset="utf-8">
+	<meta charset=utf-8>
+	<link href="demoStyles.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="http://code.createjs.com/easeljs-0.7.1.min.js"></script>
+	<!--script type="text/javascript" src="../lib/easeljs-0.7.0.min.js"></script -->
+
+	<title>EaselJS - Space Game + Engine Smoke</title>
+	<script id="sc1">
+
+	// vars and constants
+	{
+		var canvas, stage;
+
+		var dump = 0.95;
+		
+		var bg;
+		var boat;
+
+		var particles = [];
+
+		var particleGraphics;
+		var smokeDump = 0.94;
+
+		var PARTICLE_FLOW = 8;
+		var PARTICLE_STAR_FLOW = 8;
+
+		var useSprite = true;
+
+		var KEY_UP = 38;
+		var KEY_DOWN = 40;
+		var KEY_LEFT = 37;
+		var KEY_RIGHT = 39;
+		
+		var ENGINE_POWER = 1;
+		var ELASTICITY = 1;
+		var OMEGA = 4;
+		var OMEGA2 = 6;
+
+		var fwd = false;
+		var bwd = false;
+		var left = false;
+		var right = false;
+
+		var boatAngle = 0;
+
+		var stars = [];
+	}	
+	
+	function init() {
+		if (window.top != window) {
+			document.getElementById("header").style.display = "none";
+		}
+
+		canvas = document.getElementById("testCanvas");
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight - 90;
+
+		stage = new createjs.Stage(canvas);
+ 
+ 		createBG();
+
+		createShip();
+
+		particleGraphics = new createjs.Graphics();
+ 		particleGraphics.beginFill("#FFFFFF").drawCircle(0, 0, 3).endFill();
+
+ 		document.addEventListener("keydown", handleKeyDown);
+ 		document.addEventListener("keyup", handleKeyUp);
+ 		
+		createjs.Ticker.setInterval(20);
+		createjs.Ticker.on("tick", tick);
+	}
+
+	function createBG(){
+		var img = document.createElement("img");
+ 		img.src = "assets/spaceBG.png";
+		bg = new createjs.Shape(new createjs.Graphics().beginBitmapFill(img).drawRect(0, 0, canvas.width, canvas.height).endFill());
+		stage.addChild(bg);
+		var starCount = 150;
+		var starGraphics = new createjs.Graphics();
+		starGraphics.beginFill('#FFF').drawCircle(0, 0, 2).endFill();
+		
+		var star;
+		for(var i = 0; i < starCount; i++){
+			star = new createjs.Shape(starGraphics);
+			star.x = Math.random() * canvas.width;
+			star.y = Math.random() * canvas.height;
+			star.scaleX = star.scaleY = Math.random();
+			star.alpha = Math.random();
+			star.vAlpha = Math.random() * 0.05;
+			stars.push(star)
+			stage.addChild(star)
+		}
+	}
+	function createShip(){
+   		if(useSprite){
+   			var ss = new createjs.SpriteSheet({
+				"animations": {
+					"left": [0, 8, "jump"],
+					"down": [9, 17, "run"],
+					"right": [18, 26, "run"],
+					"up": [27, 35, "run"]
+				},
+				"images": ["assets/ship.png"],
+				"frames":
+					{
+						"height": 160,
+						"width":160,
+						"regX": 80,
+						"regY": 80,
+						"count": 36
+					}
+			});
+			boat = new createjs.Sprite(ss);
+			boat.gotoAndStop("right");
+		}
+		else{
+	   		boat = new createjs.Shape(new createjs.Graphics().beginFill("#800").mt(-20, -10).lt(20, 0).lt(-20, 10).lt(-15, 0).lt(-20, -10).ef());
+	   	}
+   		boat.x = canvas.width / 2;
+   		boat.y = canvas.height / 2;
+   		boat.vx = 0;
+   		boat.vy = 0;
+   		boat.a = 0;
+ 		stage.addChild(boat);
+	}
+
+	function handleKeyDown(evt){
+		switch(evt.keyCode){
+			case KEY_UP:
+				document.getElementById("keyUp").className = "keyActive";
+				fwd = true;
+				break;
+			case KEY_DOWN:
+				document.getElementById("keyDown").className = "keyActive";
+				bwd = true;
+				break;
+			case KEY_LEFT:
+				document.getElementById("keyLeft").className = "keyActive";
+				left = true;
+				break;
+			case KEY_RIGHT:
+				document.getElementById("keyRight").className = "keyActive";
+				right = true;
+				break;
+		}
+	}
+	function handleKeyUp(evt){
+		switch(evt.keyCode){
+			case KEY_UP:
+				document.getElementById("keyUp").className = "key";
+				fwd = false;
+				break;
+			case KEY_DOWN:
+				document.getElementById("keyDown").className = "key";
+				bwd = false;
+				break;
+			case KEY_LEFT:
+				document.getElementById("keyLeft").className = "key";
+				left = false;
+				break;
+			case KEY_RIGHT:
+				document.getElementById("keyRight").className = "key";
+				right = false;
+				break;
+		}
+	}
+	
+	
+	function emitSmoke(){
+		var boatRadian = 0;
+		if(useSprite){
+			boatRadian = -Math.PI * (boatAngle / 180 - 1);
+			if(boatRadian > Math.PI * 2)
+				boatRadian -= Math.PI * 2;
+			else if(boatRadian < 0)
+				boatRadian += Math.PI * 2;
+		}
+		else{
+			boatRadian = Math.PI * (boat.rotation / 180 - 1);
+		}
+		var smokeDist = useSprite ? 40 : 20;
+		var boatCos = Math.cos(boatRadian);
+		var boatSin = Math.sin(boatRadian);
+
+		for(var i = 0; i < PARTICLE_FLOW; i++){
+			var angle = boatRadian + 1.2 * (Math.random() - 0.5);
+			var cos = Math.cos(angle);
+			var sin = Math.sin(angle);
+
+			var particle = new createjs.Shape(particleGraphics);
+			particle.scaleX = particle.scaleY = Math.random();
+
+			particle.x = boat.x + smokeDist * boatCos;
+	 		particle.y = boat.y + smokeDist * boatSin;
+			var vel = 4 + (Math.random() - 0.5) * 8;
+	 		particle.vx = vel * cos;
+	 		particle.vy = vel * sin;
+
+	 		particle.vAlpha = 0.01 + Math.random() * 0.05;
+ 		
+ 			var blur = Math.random() > 0.3 ? 8 : 2;
+		 	particle.filters = [new createjs.BlurFilter(blur, blur, 3)];
+		 	particle.cache(-5, -5, 10, 10);
+	 		
+	 		stage.addChild(particle);
+	 		particles.push(particle);
+	 	}
+	 	for(var i = 0; i < PARTICLE_STAR_FLOW; i++){
+	 		var angle = boatRadian + 3 * (Math.random() - 0.5);
+			var cos = Math.cos(angle);
+			var sin = Math.sin(angle);
+
+			var particle = new createjs.Shape(particleGraphics);
+			particle.scaleX = particle.scaleY = Math.random() * 0.5;
+
+			particle.x = boat.x + smokeDist * boatCos;
+	 		particle.y = boat.y + smokeDist * boatSin;
+			var vel = 4 + (Math.random() - 0.5) * 8;
+	 		particle.vx = vel * cos;
+	 		particle.vy = vel * sin;
+	 		particle.alpha = Math.random();
+
+		 	particle.cache(-3, -3, 6, 6);
+	 		particle.star = true;
+	 		stage.addChild(particle);
+	 		particles.push(particle);
+
+	 	}
+	}
+
+	
+	function updateShipRotation(){
+		console.log("updateShip");
+		if(boatAngle > 360)
+			boatAngle -= 360;
+		if(boatAngle < 0)
+			boatAngle += 360;
+
+		var frame = 18 + Math.round(boatAngle / 10);
+		frame %= 36;
+		
+		boat.gotoAndStop(frame);
+	}
+
+	function animate(){
+		animateBG();
+
+		boat.a = 0;
+		if(fwd && !bwd){
+			boat.a = ENGINE_POWER;
+			emitSmoke()
+		}
+		if(!fwd && bwd)
+			boat.a = -ENGINE_POWER;
+
+		if(left && !right){
+			if(useSprite){
+				boatAngle += OMEGA2;
+				updateShipRotation();
+			}
+			else{
+				boat.rotation -= OMEGA;
+			}
+	
+		}
+		if(!left && right){
+			
+			if(useSprite){
+				boatAngle -= OMEGA2;
+				updateShipRotation();
+			}
+			else{
+				boat.rotation += OMEGA;
+			}
+			
+		}
+
+		var angle;
+		if(useSprite){
+			angle = -Math.PI * boatAngle / 180;
+			if(angle > Math.PI * 2)
+				angle -= Math.PI * 2;
+			else if(angle < 0)
+				angle += Math.PI * 2;
+		}
+		else{
+			angle = Math.PI * boat.rotation / 180;
+		}
+
+		boat.vx += boat.a * Math.cos(angle);
+		boat.vy += boat.a * Math.sin(angle);
+
+		boat.vx *= dump;
+		boat.vy *= dump;
+
+		boat.x += boat.vx;
+		boat.y += boat.vy;
+
+		handleLimit2();
+		
+		animateParticles();
+
+	}
+	function animateParticles(){
+		for (var i in particles){
+			p = particles[i];
+
+			p.y += p.vy;
+			p.x += p.vx;
+			p.vx *= smokeDump;
+			p.vy *= smokeDump;
+			if(p.star){
+				p.alpha -= 0.01;
+				p.scaleX = p.scaleY *= 0.99;
+				p.visible = Math.random() > 0.5;
+			}
+			else{
+				p.scaleX = p.scaleY += 0.12;
+				p.alpha -= p.vAlpha;
+			}
+
+			
+			if(p.alpha < 0.01){
+				particles.splice(particles.indexOf(p), 1);
+				stage.removeChild(p);
+			}
+
+		}
+	}
+	function animateBG(){
+		var starCount = stars.length;
+		for(var i = 0; i < starCount; i++){
+
+			stars[i].alpha += stars[i].vAlpha;
+			if(stars[i].alpha >= 1 || stars[i].alpha <= 0){
+				stars[i].vAlpha *= -1;
+			}
+		}
+	}
+	function handleLimit2() {
+		if(boat.y >= canvas.height - 20){
+			boat.vy *= -ELASTICITY;
+		}
+		if(boat.y <= 20){
+			boat.vy *= -ELASTICITY;
+		}
+		if(boat.x >= canvas.width - 20){
+			boat.vx *= -ELASTICITY;
+		}
+		if(boat.x <= 20){
+			boat.vx *= -ELASTICITY;
+		}
+	}
+
+	function tick() {
+		animate();
+		stage.update();
+	}
+	</script>
+ 
+
+ 
+</head>
+<body onload="init();" style="background-color: #000000;">
+	<div id="header">
+		<h1>EaselJS - Space Game + Engine Smoke</h1>
+	</div>
+	<canvas id="testCanvas"></canvas>
+	<div id="keypad" style="opacity: 0.7;">
+		<div id="keyUp" class="key" style="position: relative; left: 50px;">Up</div>
+		<div id="keyLeft" class="key" style="float: left;">Left</div>
+		<div id="keyDown" class="key" style="float: left;">Down</div>
+		<div id="keyRight" class="key" style="clear: right;">Right</div>
+	</div>
+	<img src="assets/spaceBG.png" style="display:none;"/>
+</body>
+</html>

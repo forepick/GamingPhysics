@@ -1,0 +1,100 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<meta charset=utf-8>
+	<link href="demoStyles.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="../lib/easeljs-0.7.0.min.js"></script>
+
+	<title>EaselJS - Acceleration &amp; Collisions (2D)</title>
+	<script>
+
+	var canvas, stage;
+	var update = true;
+	var hero;
+
+	elasticity = 1;
+ 	friction = 0.98;
+
+	function init() {
+		if (window.top != window) {
+			document.getElementById("header").style.display = "none";
+		}
+
+		canvas = document.getElementById("testCanvas");
+
+		stage = new createjs.Stage(canvas);
+
+		// create hero
+		{
+	 		var heroGraphics = new createjs.Graphics();
+	 		heroGraphics.beginFill("#800").drawCircle(0, 0, 20).endFill();
+
+	 		hero = new createjs.Shape(heroGraphics);
+	 		hero.x = 200;
+	 		hero.y = 30;
+	 		hero.vx = 8;
+	 		hero.vy = 0;
+	 		hero.ax = 0;
+	 		hero.ay = 1;
+ 		}
+
+ 		stage.addChild(hero);
+		createjs.Ticker.setInterval(20);
+		createjs.Ticker.on("tick", tick);
+	}
+
+	function animate(){
+		hero.vy += hero.ay;		// applying acceleration
+		hero.vx += hero.ax;		// applying acceleration
+		hero.vy *= friction;
+		hero.vx *= friction;
+		hero.y += hero.vy;		// applying velocity
+		hero.x += hero.vx;		// applying velocity
+
+		// Vertical Limitation
+		if(hero.y >= canvas.height - 20){
+			hero.y += (canvas.height - 20 - hero.y);
+			hero.vy *= -elasticity;
+			
+		}
+		if(hero.y <= 20){
+			hero.y -= hero.y;
+			hero.vy *= -elasticity;
+
+		}
+		if(hero.x >= canvas.width - 20){
+			hero.x += (canvas.width - 20 - hero.x);
+			hero.vx *= -elasticity;
+
+		}
+		if(hero.x <= 20){
+			hero.x -= hero.x - 20;
+			hero.vx *= -elasticity;
+
+		}
+
+
+		update = true;
+	}
+
+	function tick() {
+		animate();
+		
+		if (update) {
+			update = false; // only update once
+			stage.update();
+		}
+	}
+	</script>
+ 
+
+ 
+</head>
+<body onload="init();">
+	<div id="header">
+		<h1>EaselJS - Friction</h1>
+	</div>
+	<canvas id="testCanvas" width="960" height="400"></canvas>
+</body>
+</html>

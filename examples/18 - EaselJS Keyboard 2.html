@@ -1,0 +1,150 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8">
+	<meta charset=utf-8>
+	<link href="demoStyles.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="../lib/easeljs-0.7.0.min.js"></script>
+
+	<title>EaselJS - Keyboard Control 2</title>
+	<script id="sc1">
+
+	// vars and constants
+	{
+		var canvas, stage;
+
+		
+		var dump = 0.95;
+		
+		var bg;
+		var car;
+
+		var KEY_UP = 38;
+		var KEY_DOWN = 40;
+		var KEY_LEFT = 37;
+		var KEY_RIGHT = 39;
+		
+		var VELOCITY = 10;
+		var ELASTICITY = 1;
+		var OMEGA = 4;
+
+		var fwd = false;
+		var bwd = false;
+		var left = false;
+		var right = false;
+	}
+
+	function init() {
+		if (window.top != window) {
+			document.getElementById("header").style.display = "none";
+		}
+
+		canvas = document.getElementById("testCanvas");
+
+		stage = new createjs.Stage(canvas);
+
+		bg = new createjs.Shape(new createjs.Graphics().beginFill("#FFF").drawRect(0, 0, canvas.width, canvas.height).endFill());
+		bg.alpha = 0.2;
+		stage.addChild(bg);
+
+		createCar();
+
+ 		document.addEventListener("keydown", handleKeyDown);
+ 		document.addEventListener("keyup", handleKeyUp);
+ 		
+		createjs.Ticker.setInterval(20);
+		createjs.Ticker.on("tick", tick);
+	}
+
+	function createCar(){
+		car = new createjs.Shape(new createjs.Graphics().beginFill("#800").mt(-20, -10).lt(20, 0).lt(-20, 10).lt(-15, 0).lt(-20, -10).ef());
+   		car.x = canvas.width / 2;
+   		car.y = canvas.height / 2;
+   		car.v = 0;
+  		stage.addChild(car);
+	}
+
+	function handleKeyDown(evt){
+		switch(evt.keyCode){
+			case KEY_UP:
+				document.getElementById("keyUp").className = "keyActive";
+				fwd = true;
+				break;
+			case KEY_DOWN:
+				document.getElementById("keyDown").className = "keyActive";
+				bwd = true;
+				break;
+			case KEY_LEFT:
+				document.getElementById("keyLeft").className = "keyActive";
+				left = true;
+				break;
+			case KEY_RIGHT:
+				document.getElementById("keyRight").className = "keyActive";
+				right = true;
+				break;
+		}
+	}
+	function handleKeyUp(evt){
+		switch(evt.keyCode){
+			case KEY_UP:
+				document.getElementById("keyUp").className = "key";
+				fwd = false;
+				break;
+			case KEY_DOWN:
+				document.getElementById("keyDown").className = "key";
+				bwd = false;
+				break;
+			case KEY_LEFT:
+				document.getElementById("keyLeft").className = "key";
+				left = false;
+				break;
+			case KEY_RIGHT:
+				document.getElementById("keyRight").className = "key";
+				right = false;
+				break;
+		}
+	}
+	
+	function animate(){
+		car.v = 0;
+
+		if(fwd && !bwd)
+			car.v = VELOCITY;
+		if(!fwd && bwd)
+			car.v = -VELOCITY;
+
+		if(left && !right){
+			car.rotation -= OMEGA;
+		}
+		if(!left && right){
+			car.rotation += OMEGA;
+		}
+
+		var angle = Math.PI * car.rotation / 180;
+		car.x += car.v * Math.cos(angle);
+		car.y += car.v * Math.sin(angle);
+	}
+
+	function tick() {
+		animate();
+		stage.update();
+	}
+	
+	</script>
+ 
+
+ 
+</head>
+<body onload="init();">
+	<div id="header">
+		<h1>EaselJS - Keyboard Control 2</h1>
+	</div>
+	<canvas id="testCanvas" width="960" height="400"></canvas>
+	<div id="keypad">
+		<div id="keyUp" class="key" style="position: relative; left: 50px;">Up</div>
+		<div id="keyLeft" class="key" style="float: left;">Left</div>
+		<div id="keyDown" class="key" style="float: left;">Down</div>
+		<div id="keyRight" class="key" style="clear: right;">Right</div>
+	</div>
+</body>
+</html>
